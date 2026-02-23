@@ -1,0 +1,5 @@
+*.pyc
+__pycache__/
+*.anki2
+*.log
+collocation_cards.txt
