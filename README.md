@@ -63,30 +63,38 @@ python collocation_generator.py --all --max 500
 ### 3. 导入 Anki
 
 1. Anki → 工具 → 管理笔记类型 → 添加 → 基础 → 命名为「搭配卡片」
-2. 添加「正面」「背面」两个字段，删除默认的 Front/Back
+2. 添加 6 个字段：`Word`, `POS`, `SenseNum`, `DefEN`, `DefCN`, `Collocations`（删除默认的 Front/Back）
 3. 点击「卡片」，复制 `anki_card_template.txt` 中的正面模板、背面模板和样式
 4. 文件 → 导入 → 选择 `collocation_cards.txt`
 5. 类型选择「搭配卡片」，分隔符: Tab，允许 HTML
-6. 字段映射: 字段1→正面, 字段2→背面, 字段3→标签
+6. 字段映射: Word, POS, SenseNum, DefEN, DefCN, Collocations, 标签
 
 ## 输出文件
 
 | 文件 | 说明 |
 |------|------|
-| `collocation_cards.txt` | TSV 卡片数据（正面、背面、标签） |
+| `collocation_cards.txt` | TSV 卡片数据（7 列：Word, POS, SenseNum, DefEN, DefCN, Collocations, Tag） |
 | `anki_card_style.css` | 卡片 CSS 样式 |
 | `anki_card_template.txt` | 正面/背面模板 + 样式 |
 | `skipped_words.log` | 跳过的单词记录 |
 
-## 卡片示例
+## 卡片设计
 
-**正面**（提示面）：
-> **pitch**
-> *noun* `#1`
+**正面**（全英文，隐藏中文）：
+> **pitch** *noun* `#1`
+> sports field
+>
+> `VERB + PITCH`
+> **invade** | **run onto**
+> ✦ *The pitch was invaded by angry fans.*
+>
+> `PREPOSITION`
+> **off the pitch**
+> ✦ *The players have just come off the pitch.*
+
+**背面**（显示中文）：
+> **pitch** *noun* `#1`
 > sports field 运动场
-
-**背面**（答案面）：
-> **pitch** *noun* `#1` sports field 运动场
 >
 > `VERB + PITCH`
 > **invade** | **run onto** 涌入／跑到球场
@@ -95,6 +103,8 @@ python collocation_generator.py --all --max 500
 > `PREPOSITION`
 > **off the pitch** 离开球场
 > ✦ *The players have just come off the pitch.* 选手们刚从球场下来。
+
+中文显隐通过 CSS 类 `.hide-cn` 控制，正面模板加此类隐藏所有 `.def-cn`、`.colloc-chn`、`.ex-cn`，背面移除即显示。
 
 ## 搭配筛选规则
 

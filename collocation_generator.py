@@ -387,55 +387,10 @@ def _parse_sb_g(sb_g):
         'examples': examples,
     }
 
-# ================== 步骤4: 生成 Anki 卡片 HTML ==================
+# ================== 步骤4: 生成 Anki 卡片字段 ==================
 
-def generate_front_html(card):
-    """生成卡片正面 HTML"""
-    sense_label = ""
-    if card['sense_num']:
-        sense_label = f'<span class="sense-num">#{card["sense_num"]}</span>'
-
-    pos_label = ""
-    if card['pos']:
-        pos_label = f'<span class="pos">{card["pos"]}</span>'
-
-    def_html = ""
-    if card['def_en'] or card['def_cn']:
-        def_html = '<div class="definition">'
-        if card['def_en']:
-            def_html += f'<span class="def-en">{card["def_en"]}</span>'
-        if card['def_cn']:
-            def_html += f'<span class="def-cn">{card["def_cn"]}</span>'
-        def_html += '</div>'
-
-    return f'''<div class="colloc-front">
-  <div class="word">{card["word"]}</div>
-  <div class="meta">{pos_label}{sense_label}</div>
-  {def_html}
-</div>'''
-
-
-def generate_back_html(card):
-    """生成卡片背面 HTML"""
-    # 顶部信息（同正面）
-    sense_label = ""
-    if card['sense_num']:
-        sense_label = f'<span class="sense-num">#{card["sense_num"]}</span>'
-
-    pos_label = ""
-    if card['pos']:
-        pos_label = f'<span class="pos">{card["pos"]}</span>'
-
-    def_html = ""
-    if card['def_en'] or card['def_cn']:
-        def_html = '<div class="definition">'
-        if card['def_en']:
-            def_html += f'<span class="def-en">{card["def_en"]}</span>'
-        if card['def_cn']:
-            def_html += f'<span class="def-cn">{card["def_cn"]}</span>'
-        def_html += '</div>'
-
-    # 搭配内容
+def generate_collocations_html(card):
+    """生成搭配内容 HTML（包含中英文，由模板 CSS 控制显隐）"""
     groups_html = ""
     for group in card['collocation_groups']:
         groups_html += f'<div class="colloc-group">'
@@ -460,30 +415,31 @@ def generate_back_html(card):
             groups_html += '</div>'
         groups_html += '</div>'
 
-    return f'''<div class="colloc-back">
-  <div class="word">{card["word"]}</div>
-  <div class="meta">{pos_label}{sense_label}</div>
-  {def_html}
-  <hr class="divider">
-  <div class="colloc-content">{groups_html}</div>
-</div>'''
+    return groups_html
 
 
 def generate_anki_import_file(all_cards):
     """生成 Anki 导入文件 (TSV)
-    格式: 正面<tab>背面<tab>tag
+    格式: Word<tab>POS<tab>SenseNum<tab>DefEN<tab>DefCN<tab>Collocations<tab>Tags
     """
     lines = []
     for card in all_cards:
-        front = generate_front_html(card).replace('\n', '').replace('\r', '')
-        back = generate_back_html(card).replace('\n', '').replace('\r', '')
-        tag = card['word']
-        lines.append(f"{front}\t{back}\t{tag}")
+        colloc = generate_collocations_html(card).replace('\n', '').replace('\r', '')
+        fields = [
+            card['word'],
+            card['pos'],
+            card['sense_num'],
+            card['def_en'],
+            card['def_cn'],
+            colloc,
+            card['word'],  # tag
+        ]
+        lines.append('\t'.join(fields))
     return '\n'.join(lines)
 
 # ================== CSS 样式 ==================
 
-CARD_CSS = '''/* Anki 搭配卡片样式 - 复制到笔记类型的「样式」中 */
+CARD_CSS = '''/* Anki 搭配卡片样式 */
 
 .card {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
@@ -493,7 +449,7 @@ CARD_CSS = '''/* Anki 搭配卡片样式 - 复制到笔记类型的「样式」�
   padding: 20px;
 }
 
-.colloc-front, .colloc-back {
+.colloc-card {
   max-width: 600px;
   margin: 0 auto;
   background: #fff;
@@ -627,15 +583,46 @@ CARD_CSS = '''/* Anki 搭配卡片样式 - 复制到笔记类型的「样式」�
   line-height: 1.5;
   margin-left: 16px;
 }
+
+/* 正面隐藏中文 */
+.hide-cn .def-cn,
+.hide-cn .colloc-chn,
+.hide-cn .ex-cn {
+  display: none;
+}
 '''
 
-CARD_TEMPLATE_FRONT = '''{{正面}}'''
+CARD_TEMPLATE_FRONT = '''<div class="colloc-card hide-cn">
+  <div class="word">{{Word}}</div>
+  <div class="meta">
+    <span class="pos">{{POS}}</span>
+    {{#SenseNum}}<span class="sense-num">#{{SenseNum}}</span>{{/SenseNum}}
+  </div>
+  {{#DefEN}}
+  <div class="definition">
+    <span class="def-en">{{DefEN}}</span>
+    <span class="def-cn">{{DefCN}}</span>
+  </div>
+  {{/DefEN}}
+  <hr class="divider">
+  <div class="colloc-content">{{Collocations}}</div>
+</div>'''
 
-CARD_TEMPLATE_BACK = '''{{FrontSide}}
-
-<hr id="answer">
-
-{{背面}}'''
+CARD_TEMPLATE_BACK = '''<div class="colloc-card">
+  <div class="word">{{Word}}</div>
+  <div class="meta">
+    <span class="pos">{{POS}}</span>
+    {{#SenseNum}}<span class="sense-num">#{{SenseNum}}</span>{{/SenseNum}}
+  </div>
+  {{#DefEN}}
+  <div class="definition">
+    <span class="def-en">{{DefEN}}</span>
+    <span class="def-cn">{{DefCN}}</span>
+  </div>
+  {{/DefEN}}
+  <hr class="divider">
+  <div class="colloc-content">{{Collocations}}</div>
+</div>'''
 
 # ================== 主程序 ==================
 
@@ -836,14 +823,15 @@ def main():
     print("📌 导入步骤:")
     print("  1. 在 Anki 中: 工具 → 管理笔记类型 → 添加")
     print("  2. 选择「基础」，命名为「搭配卡片」")
-    print("  3. 字段: 添加「正面」「背面」两个字段，删除默认的 Front/Back")
+    print("  3. 字段: 添加 Word, POS, SenseNum, DefEN, DefCN, Collocations")
+    print("     （删除默认的 Front/Back）")
     print("  4. 点击「卡片」，复制 anki_card_template.txt 中的:")
     print("     - 正面模板 → 粘贴到「正面模板」")
     print("     - 背面模板 → 粘贴到「背面模板」")
     print("     - 样式 → 粘贴到「样式」")
     print(f"  5. 文件 → 导入，选择 {OUTPUT_FILE}")
-    print("  6. 类型选择「搭配卡片」，字段分隔符: Tab，允许HTML")
-    print("  7. 字段映射: 字段1→正面, 字段2→背面, 字段3→标签")
+    print("  6. 类型选择「搭配卡片」，分隔符: Tab，允许HTML")
+    print("  7. 字段映射: Word, POS, SenseNum, DefEN, DefCN, Collocations, 标签")
 
 
 if __name__ == "__main__":

@@ -1,4 +1,4 @@
-/* Anki 搭配卡片样式 - 复制到笔记类型的「样式」中 */
+/* Anki 搭配卡片样式 */
 
 .card {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
@@ -8,7 +8,7 @@
   padding: 20px;
 }
 
-.colloc-front, .colloc-back {
+.colloc-card {
   max-width: 600px;
   margin: 0 auto;
   background: #fff;
@@ -141,4 +141,11 @@
   font-size: 14px;
   line-height: 1.5;
   margin-left: 16px;
+}
+
+/* 正面隐藏中文 */
+.hide-cn .def-cn,
+.hide-cn .colloc-chn,
+.hide-cn .ex-cn {
+  display: none;
 }

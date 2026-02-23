@@ -1,5 +1,27 @@
-*.pyc
+# Python
 __pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Anki 数据库
 *.anki2
-*.log
+*.anki2-journal
+collection.media/
+
+# 生成的输出文件
 collocation_cards.txt
+anki_card_style.css
+anki_card_template.txt
+
+# 临时文件
+*.tmp
+*.log
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
