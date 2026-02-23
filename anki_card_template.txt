@@ -1,6 +1,6 @@
 === 正面模板 ===
 <div class="colloc-card hide-cn">
-  <div class="word">{{Word}}</div>
+  <div class="word">{{Word}}{{#FreqRank}}<span class="freq-rank">#{{FreqRank}}</span>{{/FreqRank}}</div>
   <div class="meta">
     <span class="pos">{{POS}}</span>
     {{#SenseNum}}<span class="sense-num">#{{SenseNum}}</span>{{/SenseNum}}
@@ -17,7 +17,7 @@
 
 === 背面模板 ===
 <div class="colloc-card">
-  <div class="word">{{Word}}</div>
+  <div class="word">{{Word}}{{#FreqRank}}<span class="freq-rank">#{{FreqRank}}</span>{{/FreqRank}}</div>
   <div class="meta">
     <span class="pos">{{POS}}</span>
     {{#SenseNum}}<span class="sense-num">#{{SenseNum}}</span>{{/SenseNum}}
@@ -81,6 +81,13 @@
   border-radius: 12px;
   font-weight: bold;
   font-size: 14px;
+}
+
+.freq-rank {
+  font-size: 14px;
+  color: #95a5a6;
+  font-weight: normal;
+  margin-left: 8px;
 }
 
 /* 释义 */

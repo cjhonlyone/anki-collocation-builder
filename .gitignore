@@ -14,6 +14,9 @@ collocation_cards.txt
 anki_card_style.css
 anki_card_template.txt
 
+# 词频字典（大文件）
+eng_dict.txt
+
 # 临时文件
 *.tmp
 *.log

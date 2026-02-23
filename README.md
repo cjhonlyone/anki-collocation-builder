@@ -8,6 +8,7 @@
 - 🎯 只保留**动词搭配**和**介词搭配**（过滤形容词、副词等）
 - 📝 保留所有例句（中英双语）
 - 🎨 精美卡片样式：圆角、阴影、彩色分类标签
+- 📊 词频序号字段（基于 `eng_dict.txt`），便于按词频排序优先学习
 - 📥 输出 TSV 文件，直接导入 Anki
 
 ## 前置要求
@@ -60,20 +61,26 @@ python collocation_generator.py -a ~/path/to/collection.anki2
 python collocation_generator.py --all --max 500
 ```
 
+**指定词频字典：**
+```bash
+python collocation_generator.py --all --freq /path/to/eng_dict.txt
+```
+默认使用当前目录下的 `eng_dict.txt`。词频序号会写入 FreqRank 字段，可在 Anki 中按此字段排序，优先学习高频词。
+
 ### 3. 导入 Anki
 
 1. Anki → 工具 → 管理笔记类型 → 添加 → 基础 → 命名为「搭配卡片」
-2. 添加 6 个字段：`Word`, `POS`, `SenseNum`, `DefEN`, `DefCN`, `Collocations`（删除默认的 Front/Back）
+2. 添加 7 个字段：`Word`, `POS`, `SenseNum`, `DefEN`, `DefCN`, `Collocations`, `FreqRank`（删除默认的 Front/Back）
 3. 点击「卡片」，复制 `anki_card_template.txt` 中的正面模板、背面模板和样式
 4. 文件 → 导入 → 选择 `collocation_cards.txt`
 5. 类型选择「搭配卡片」，分隔符: Tab，允许 HTML
-6. 字段映射: Word, POS, SenseNum, DefEN, DefCN, Collocations, 标签
+6. 字段映射: Word, POS, SenseNum, DefEN, DefCN, Collocations, FreqRank, 标签
 
 ## 输出文件
 
 | 文件 | 说明 |
 |------|------|
-| `collocation_cards.txt` | TSV 卡片数据（7 列：Word, POS, SenseNum, DefEN, DefCN, Collocations, Tag） |
+| `collocation_cards.txt` | TSV 卡片数据（8 列：Word, POS, SenseNum, DefEN, DefCN, Collocations, FreqRank, Tag） |
 | `anki_card_style.css` | 卡片 CSS 样式 |
 | `anki_card_template.txt` | 正面/背面模板 + 样式 |
 | `skipped_words.log` | 跳过的单词记录 |
@@ -81,7 +88,7 @@ python collocation_generator.py --all --max 500
 ## 卡片设计
 
 **正面**（全英文，隐藏中文）：
-> **pitch** *noun* `#1`
+> **pitch** <sub>#1892</sub> *noun* `#1`
 > sports field
 >
 > `VERB + PITCH`
@@ -93,7 +100,7 @@ python collocation_generator.py --all --max 500
 > ✦ *The players have just come off the pitch.*
 
 **背面**（显示中文）：
-> **pitch** *noun* `#1`
+> **pitch** <sub>#1892</sub> *noun* `#1`
 > sports field 运动场
 >
 > `VERB + PITCH`

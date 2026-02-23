@@ -31,6 +31,7 @@ import logging
 ANKI_DB = "./collection.anki2"
 MDX_SERVER_URL = "http://localhost:8000"
 MDX_DICT_DIR = "../牛津英语搭配词典全索引"
+FREQ_DICT_FILE = "eng_dict.txt"
 OUTPUT_FILE = "collocation_cards.txt"
 SKIPPED_LOG = "skipped_words.log"
 
@@ -59,6 +60,24 @@ logging.basicConfig(
     encoding='utf-8',
 )
 logger = logging.getLogger(__name__)
+
+# ================== 词频字典 ==================
+
+def load_freq_dict(dict_file):
+    """加载词频字典，返回 {word_form: rank} 映射（所有词形都映射到同一行号）"""
+    freq_map = {}
+    try:
+        with open(dict_file, 'r', encoding='utf-8') as f:
+            for line_num, line in enumerate(f, start=1):
+                words = line.strip().split()
+                for word in words:
+                    word = word.lower()
+                    if word not in freq_map:
+                        freq_map[word] = line_num
+        print(f"✅ 加载词频字典: {len(freq_map)} 个词形, {line_num} 行")
+    except FileNotFoundError:
+        print(f"⚠️  未找到词频字典文件: {dict_file}")
+    return freq_map
 
 # ================== 步骤1: 获取单词列表 ==================
 
@@ -420,11 +439,12 @@ def generate_collocations_html(card):
 
 def generate_anki_import_file(all_cards):
     """生成 Anki 导入文件 (TSV)
-    格式: Word<tab>POS<tab>SenseNum<tab>DefEN<tab>DefCN<tab>Collocations<tab>Tags
+    格式: Word<tab>POS<tab>SenseNum<tab>DefEN<tab>DefCN<tab>Collocations<tab>FreqRank<tab>Tags
     """
     lines = []
     for card in all_cards:
         colloc = generate_collocations_html(card).replace('\n', '').replace('\r', '')
+        freq_rank = str(card.get('freq_rank', ''))
         fields = [
             card['word'],
             card['pos'],
@@ -432,6 +452,7 @@ def generate_anki_import_file(all_cards):
             card['def_en'],
             card['def_cn'],
             colloc,
+            freq_rank,
             card['word'],  # tag
         ]
         lines.append('\t'.join(fields))
@@ -487,6 +508,13 @@ CARD_CSS = '''/* Anki 搭配卡片样式 */
   border-radius: 12px;
   font-weight: bold;
   font-size: 14px;
+}
+
+.freq-rank {
+  font-size: 14px;
+  color: #95a5a6;
+  font-weight: normal;
+  margin-left: 8px;
 }
 
 /* 释义 */
@@ -593,7 +621,7 @@ CARD_CSS = '''/* Anki 搭配卡片样式 */
 '''
 
 CARD_TEMPLATE_FRONT = '''<div class="colloc-card hide-cn">
-  <div class="word">{{Word}}</div>
+  <div class="word">{{Word}}{{#FreqRank}}<span class="freq-rank">#{{FreqRank}}</span>{{/FreqRank}}</div>
   <div class="meta">
     <span class="pos">{{POS}}</span>
     {{#SenseNum}}<span class="sense-num">#{{SenseNum}}</span>{{/SenseNum}}
@@ -609,7 +637,7 @@ CARD_TEMPLATE_FRONT = '''<div class="colloc-card hide-cn">
 </div>'''
 
 CARD_TEMPLATE_BACK = '''<div class="colloc-card">
-  <div class="word">{{Word}}</div>
+  <div class="word">{{Word}}{{#FreqRank}}<span class="freq-rank">#{{FreqRank}}</span>{{/FreqRank}}</div>
   <div class="meta">
     <span class="pos">{{POS}}</span>
     {{#SenseNum}}<span class="sense-num">#{{SenseNum}}</span>{{/SenseNum}}
@@ -658,6 +686,8 @@ def parse_arguments():
                         help=f'MDX 词典目录（默认: {MDX_DICT_DIR}）')
     parser.add_argument('--max', type=int, default=0,
                         help='最多处理的单词数（0 = 不限制）')
+    parser.add_argument('--freq', metavar='FILE',
+                        help=f'词频字典文件（默认: {FREQ_DICT_FILE}）')
     return parser.parse_args()
 
 
@@ -693,6 +723,10 @@ def main():
             print('  python mdx_server.py "../../牛津英语搭配词典全索引/"')
             return
         print(f"✅ MDX-Server 运行正常\n")
+
+    # 加载词频字典
+    freq_file = args.freq or FREQ_DICT_FILE
+    freq_map = load_freq_dict(freq_file)
 
     # 获取单词列表
     if args.all:
@@ -759,6 +793,10 @@ def main():
         if html:
             cards = parse_collocation_html(html, word)
             if cards:
+                # 附加词频序号
+                rank = freq_map.get(word.lower(), '')
+                for card in cards:
+                    card['freq_rank'] = str(rank)
                 all_cards.extend(cards)
                 success_count += 1
                 if verbose:
@@ -823,7 +861,7 @@ def main():
     print("📌 导入步骤:")
     print("  1. 在 Anki 中: 工具 → 管理笔记类型 → 添加")
     print("  2. 选择「基础」，命名为「搭配卡片」")
-    print("  3. 字段: 添加 Word, POS, SenseNum, DefEN, DefCN, Collocations")
+    print("  3. 字段: 添加 Word, POS, SenseNum, DefEN, DefCN, Collocations, FreqRank")
     print("     （删除默认的 Front/Back）")
     print("  4. 点击「卡片」，复制 anki_card_template.txt 中的:")
     print("     - 正面模板 → 粘贴到「正面模板」")
@@ -831,7 +869,7 @@ def main():
     print("     - 样式 → 粘贴到「样式」")
     print(f"  5. 文件 → 导入，选择 {OUTPUT_FILE}")
     print("  6. 类型选择「搭配卡片」，分隔符: Tab，允许HTML")
-    print("  7. 字段映射: Word, POS, SenseNum, DefEN, DefCN, Collocations, 标签")
+    print("  7. 字段映射: Word, POS, SenseNum, DefEN, DefCN, Collocations, FreqRank, 标签")
 
 
 if __name__ == "__main__":
